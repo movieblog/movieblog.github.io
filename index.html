@@ -1,5 +1,281 @@
+<!DOCTYPE html>
 <html>
+<head>
+    <title>Implement TheMovieDB (TMDB) API with jQuery AJAX | YogiHosting Demo</title>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/png" href="http://www.yogihosting.com/wp-content/themes/yogi-yogihosting/Images/favicon.ico" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
+    <style>
+        body {
+            background: #111 no-repeat;
+            background-image: -webkit-gradient(radial, 50% 0, 150, 50% 0, 300, from(#444), to(#111));
+        }
+
+        h1 {
+            font-size: 24px;
+        }
+
+        h2 {
+            font-size: 22px;
+        }
+
+        h3 {
+            font-size: 20px;
+        }
+
+        h1, h2, h3 {
+            text-align: center;
+            color: #FFF;
+        }
+
+            h2 a {
+                color: #0184e3;
+                text-decoration: none;
+            }
+
+                h2 a:hover {
+                    color: #0184e3;
+                    text-decoration: underline;
+                }
+
+            h3 a {
+                color: #00e8ff;
+                text-decoration: none;
+            }
+
+                h3 a:hover {
+                    color: #00e8ff;
+                }
+
+        .container {
+            width: 960px;
+            margin: auto;
+            color: #FFF;
+            font-size: 25px;
+        }
+
+            .container h3 {
+                font-size: 20px;
+            }
+
+        #apiDiv {
+            border: dashed 2px #CCC;
+            padding: 10px;
+            padding-left: 20px;
+        }
+
+            #apiDiv input, #apiDiv button {
+                font-size: 25px;
+                color: #000;
+            }
+
+            #apiDiv h4 {
+                margin: 10px 0;
+            }
+
+            #apiDiv .imageDiv {
+                text-align: center;
+            }
+
+                #apiDiv .imageDiv img {
+                    display: none;
+                }
+
+            #apiDiv #message {
+                padding-top: 10px;
+            }
+
+                #apiDiv #message .resultDiv {
+                    background: #FFF;
+                    display: inline-block;
+                }
+
+                    #apiDiv #message .resultDiv > p {
+                        color: #000;
+                        display: inline-block;
+                        width: 95%;
+                        padding: 10px;
+                        border-bottom: double 2px #CCC;
+                    }
+
+                    #apiDiv #message .resultDiv .result {
+                        width: 23%;
+                        height: 300px;
+                        padding: 6px;
+                        float: left;
+                        text-align: center;
+                        cursor: pointer;
+                    }
+
+                        #apiDiv #message .resultDiv .result img {
+                            width: 75%;
+                        }
+
+                        #apiDiv #message .resultDiv .result p {
+                            margin: 0;
+                        }
+
+                            #apiDiv #message .resultDiv .result p a {
+                                color: #808080;
+                                text-decoration: none;
+                                font-size: 20px;
+                                height: 100px;
+                            }
+
+                                #apiDiv #message .resultDiv .result p a:hover {
+                                    text-decoration: underline;
+                                }
+
+        #myModal {
+            color: #000;
+        }
+
+        #reset {
+            padding: 5px 10px;
+            background: #4CAF50;
+            border: none;
+            color: #FFF;
+            cursor: pointer;
+        }
+
+            #reset:hover {
+                color: #4CAF50;
+                background: #FFF;
+            }
+    </style>
+</head>
 <body>
-Selamat Datang!
+    <h1>Implement TheMovieDB (TMDB) API with jQuery AJAX</h1>
+    <h2><a href="http://www.yogihosting.com/implement-tmdb-api-with-jquery-ajax/">Read the tutorial on YogiHosting » </a><button id="reset">Reset »</button></h2>
+    <h3>Important Link - <a href="http://www.yogihosting.com/jquery-ajax/">jQuery AJAX</a></h3>
+    <div class="container">
+        <div id="apiDiv">
+            <h4>Enter the Search Text and Press Submit Button</h4>
+            <input type="text" id="searchInput" placeholder="Search actor" />
+            <button id="submit">Submit</button>
+            <div class="imageDiv">
+                <img src="Image/loading.gif" />
+            </div>
+            <div id="message">
+            </div>
+        </div>
+        <ul id="pagination"></ul>
+    </div>
+
+    <!-- Modal -->
+    <div id="myModal" class="modal fade" role="dialog">
+        <div class="modal-dialog">
+            <!-- Modal content-->
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    <h4 class="modal-title" id="modalTitleH4"></h4>
+                </div>
+                <div class="modal-body" id="modalBodyDiv">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <script src="JS/jquery.twbsPagination.js"></script>
+    <script>
+        $(document).ready(function () {
+            $("#reset").click(function (e) {
+                location.reload();
+            });
+
+            $("#submit").click(function (e) {
+                var validate = Validate();
+                $("#message").html(validate);
+                if (validate.length == 0) {
+                    CallAPI(1);
+                }
+            });
+
+            $("#message").on("click", ".result", function () {
+                var resourceId = $(this).attr("resourceId");
+                $.ajax({
+                    url: "https://api.themoviedb.org/3/movie/" + resourceId + "?language=en-US",
+                    data: {
+                        api_key: "3356865d41894a2fa9bfa84b2b5f59bb"
+                    },
+                    dataType: 'json',
+                    success: function (result, status, xhr) {
+                        $("#modalTitleH4").html(result["original_title"]);
+
+                        var image = result["backdrop_path"] == null ? "Image/no-image.png" : "https://image.tmdb.org/t/p/w500/" + result["backdrop_path"];
+                        var biography = result["overview"] == null ? "No information available" : result["overview"];
+
+                        var resultHtml = "<p class=\"text-center\"><img src=\"" + image + "\"/></p><p>" + overview + "</p>";
+                        resultHtml += "<p>Release: " + result["release_date"] + "</p><p>Genre: " + result["genre_ids"] + "";
+
+                        $("#modalBodyDiv").html(resultHtml)
+
+                        $("#myModal").modal("show");
+                    },
+                    error: function (xhr, status, error) {
+                        $("#message").html("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
+                    }
+                });
+            });
+
+            $(document).ajaxStart(function () {
+                $(".imageDiv img").show();
+            });
+
+            $(document).ajaxStop(function () {
+                $(".imageDiv img").hide();
+            });
+
+            function CallAPI(page) {
+                $.ajax({
+                    url: "https://api.themoviedb.org/3/search/movie?language=en-US&query=" + $("#searchInput").val() + "&page=" + page + "&include_adult=false",
+                    data: { "api_key": "3356865d41894a2fa9bfa84b2b5f59bb" },
+                    dataType: "json",
+                    success: function (result, status, xhr) {
+                        var resultHtml = $("<div class=\"resultDiv\"><p>Title</p>");
+                        for (i = 0; i < result["results"].length; i++) {
+
+                            var image = result["results"][i]["backdrop_path"] == null ? "Image/no-image.png" : "https://image.tmdb.org/t/p/w500/" + result["results"][i]["backdrop_path"];
+
+                            resultHtml.append("<div class=\"result\" resourceId=\"" + result["results"][i]["id"] + "\">" + "<img src=\"" + image + "\" />" + "<p><a>" + result["results"][i]["original_title"] + "</a></p></div>")
+                        }
+
+                        resultHtml.append("</div>");
+                        $("#message").html(resultHtml);
+
+                        Paging(result["total_pages"]);
+                    },
+                    error: function (xhr, status, error) {
+                        $("#message").html("Result: " + status + " " + error + " " + xhr.status + " " + xhr.statusText)
+                    }
+                });
+            }
+
+            function Validate() {
+                var errorMessage = "";
+                if ($("#searchInput").val() == "") {
+                    errorMessage += "► Enter Search Text";
+                }
+                return errorMessage;
+            }
+
+            function Paging(totalPage) {
+                var obj = $("#pagination").twbsPagination({
+                    totalPages: totalPage,
+                    visiblePages: 5,
+                    onPageClick: function (event, page) {
+                        CallAPI(page);
+                    }
+                });
+            }
+
+        });
+    </script>
 </body>
 </html>
